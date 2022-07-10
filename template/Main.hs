@@ -1,3 +1,5 @@
+-- The following URL template is used
+-- https://github.com/setsunawb/ackit-hs/blob/main/template/Main.hs
 {-# LANGUAGE DefaultSignatures #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleContexts #-}
