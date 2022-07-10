@@ -1,10 +1,10 @@
 name:                ackit-hs
 version:             0.1.0.0
-github:              "setsunawb/ackit-hs"
-license:             Apache License 2.0
-author:              "setsunawb"
-maintainer:          "muxwld@gmail.com"
-copyright:           "2022 setsunawb"
+github:              setsunawb/ackit-hs
+license:             Apache-2.0
+author:              setsunawb
+maintainer:          muxwld@gmail.com
+copyright:           2022 setsunawb
 
 extra-source-files:
 - README.md

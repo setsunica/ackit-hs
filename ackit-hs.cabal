@@ -14,7 +14,7 @@ bug-reports:    https://github.com/setsunawb/ackit-hs/issues
 author:         setsunawb
 maintainer:     muxwld@gmail.com
 copyright:      2022 setsunawb
-license:        Apache License 2.0
+license:        Apache-2.0
 license-file:   LICENSE
 build-type:     Simple
 extra-source-files:
