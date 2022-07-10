@@ -1,25 +1,25 @@
 -- The following URL template is used
--- https://github.com/setsunawb/ackit-hs/blob/main/template/Main.hs
+-- https://github.com/setsunawb/ackit-hs/blob/main/template/Main.hs (v0.1.1.0)
 {-# LANGUAGE DefaultSignatures #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TypeOperators #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+
 {-# HLINT ignore "Use newtype instead of data" #-}
 
-module Main where
+module Main (main) where
 
 import Control.Applicative (Alternative)
-import Data.List (elemIndex)
+import GHC.Arr as A (Array, Ix, array)
 import GHC.Base (Alternative (..))
 import GHC.Generics (Generic (..), K1 (..), M1 (..), U1, V1, type (:*:) (..), type (:+:) (..))
 import qualified GHC.Generics as G
 import Text.Printf (printf)
 import Text.Read (readMaybe)
 
-
----- Data Module ----
+---- Util.Data Module ----
 
 newtype Text = Text String
   deriving (Eq, Ord, Show)
@@ -27,7 +27,18 @@ newtype Text = Text String
 newtype VList a = VList ([] a)
   deriving (Eq, Ord, Show, Functor, Applicative, Monad)
 
----- Parse Module ----
+newtype Coord a = Coord (a, a)
+  deriving (Eq, Ord, Show, Ix)
+
+instance Num a => Num (Coord a) where
+  (Coord (x1, y1)) + (Coord (x2, y2)) = Coord (x1 + x2, y1 + y2)
+  (Coord (x1, y1)) * (Coord (x2, y2)) = Coord (x1 * x2, y1 * y2)
+  abs (Coord (x, y)) = Coord (abs x, abs y)
+  signum (Coord (x, y)) = Coord (signum x, signum y)
+  fromInteger _ = undefined
+  negate (Coord (x, y)) = Coord (-x, -y)
+
+---- Util.Parse Module ----
 
 note :: l -> Maybe r -> Either l r
 note l m = case m of
@@ -38,10 +49,10 @@ parseErrorNote :: Message -> Maybe a -> P a
 parseErrorNote s m = P $ note (ParseError s) m
 
 splitFirstElemSep :: Char -> String -> Maybe (String, String)
-splitFirstElemSep c s = do
-  idx <- elemIndex c s
-  let (b, _ : a) = splitAt idx s
-  pure (b, a)
+splitFirstElemSep c s =
+  case break (== c) s of
+    (b, _ : a) -> pure (b, a)
+    _ -> Nothing
 
 splitFirstLine :: String -> Maybe (String, String)
 splitFirstLine = splitFirstElemSep '\n'
@@ -184,7 +195,7 @@ instance (Parse' f) => Parse' (M1 i t f) where
     (m1, s') <- parse' s
     pure (M1 m1, s')
 
----- Compose Module ----
+---- Util.Compose Module ----
 
 class Compose a where
   compose :: a -> String
@@ -234,6 +245,41 @@ instance Compose c => Compose' (K1 i c) where
 instance Compose' f => Compose' (M1 i t f) where
   compose' (M1 x) = compose' x
 
+---- Util.Coll Module ----
+
+nat :: [Int]
+nat = iterate (+ 1) 0
+
+indexed :: [a] -> [(Int, a)]
+indexed = zip nat
+
+coordArray :: (Int, Int) -> [[a]] -> Array (Coord Int) a
+coordArray (n, m) nl = A.array range al
+  where
+    range = (Coord (0, 0), Coord (n - 1, m - 1))
+    inl = indexed nl
+    al = do
+      (i, r) <- inl
+      let ir = indexed r
+      (j, c) <- ir
+      pure (Coord (i, j), c)
+
+data Direc = R | UR | T | UL | L | LL | B | LR
+  deriving (Eq, Ord, Show)
+
+direcs :: [Direc]
+direcs = [R, UR, T, UL, L, LL, B, LR]
+
+dv :: Direc -> Coord Int
+dv d = case d of
+  R -> Coord (1, 0)
+  UR -> Coord (1, 1)
+  T -> Coord (0, 1)
+  UL -> Coord (-1, 1)
+  L -> Coord (-1, 0)
+  LL -> Coord (-1, -1)
+  B -> Coord (0, -1)
+  LR -> Coord (1, -1)
 
 ---- Main  Module ----
 

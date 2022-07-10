@@ -5,7 +5,7 @@ cabal-version: 1.12
 -- see: https://github.com/sol/hpack
 
 name:           ackit-hs
-version:        0.1.0.0
+version:        0.1.1.0
 synopsis:       Haskell template for AtCoder submission
 description:    Please see the README on GitHub at <https://github.com/setsunawb/ackit-hs#readme>
 category:       Template
@@ -27,6 +27,7 @@ source-repository head
 
 library
   exposed-modules:
+      Util.Coll
       Util.Compose
       Util.Data
       Util.Parse
@@ -45,7 +46,7 @@ executable ackit-hs
       Paths_ackit_hs
   hs-source-dirs:
       template
-  ghc-options: -Wall -Werror -threaded -rtsopts -with-rtsopts=-N
+  ghc-options: -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       ackit-hs
     , base >=4.7 && <5

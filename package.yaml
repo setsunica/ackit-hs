@@ -1,5 +1,5 @@
 name:                ackit-hs
-version:             0.1.0.0
+version:             0.1.1.0
 github:              setsunawb/ackit-hs
 license:             Apache-2.0
 author:              setsunawb
@@ -29,7 +29,6 @@ executables:
     source-dirs:         template
     ghc-options:
     - -Wall
-    - -Werror
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
