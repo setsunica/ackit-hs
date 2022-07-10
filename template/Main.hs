@@ -19,7 +19,7 @@ import Text.Printf (printf)
 import Text.Read (readMaybe)
 
 
----- Types Module ----
+---- Data Module ----
 
 newtype Text = Text String
   deriving (Eq, Ord, Show)
