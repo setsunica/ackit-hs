@@ -1,0 +1,67 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.34.4.
+--
+-- see: https://github.com/sol/hpack
+
+name:           ackit-hs
+version:        0.1.0.0
+synopsis:       Haskell template for AtCoder submission
+description:    Please see the README on GitHub at <https://github.com/setsunawb/ackit-hs#readme>
+category:       Template
+homepage:       https://github.com/setsunawb/ackit-hs#readme
+bug-reports:    https://github.com/setsunawb/ackit-hs/issues
+author:         setsunawb
+maintainer:     muxwld@gmail.com
+copyright:      2022 setsunawb
+license:        Apache License 2.0
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.md
+    ChangeLog.md
+
+source-repository head
+  type: git
+  location: https://github.com/setsunawb/ackit-hs
+
+library
+  exposed-modules:
+      Util.Compose
+      Util.Data
+      Util.Parse
+  other-modules:
+      Paths_ackit_hs
+  hs-source-dirs:
+      src
+  ghc-options: -Wall -Werror
+  build-depends:
+      base >=4.7 && <5
+  default-language: Haskell2010
+
+executable ackit-hs
+  main-is: Main.hs
+  other-modules:
+      Paths_ackit_hs
+  hs-source-dirs:
+      template
+  ghc-options: -Wall -Werror -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      ackit-hs
+    , base >=4.7 && <5
+  default-language: Haskell2010
+
+test-suite ackit-hs-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Paths_ackit_hs
+  hs-source-dirs:
+      test
+  ghc-options: -Wall -Werror -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      ackit-hs
+    , base >=4.7 && <5
+    , tasty
+    , tasty-hunit
+  default-language: Haskell2010

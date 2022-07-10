@@ -1,0 +1,52 @@
+name:                ackit-hs
+version:             0.1.0.0
+github:              "setsunawb/ackit-hs"
+license:             Apache License 2.0
+author:              "setsunawb"
+maintainer:          "muxwld@gmail.com"
+copyright:           "2022 setsunawb"
+
+extra-source-files:
+- README.md
+- ChangeLog.md
+
+synopsis:            Haskell template for AtCoder submission
+category:            Template
+description:         Please see the README on GitHub at <https://github.com/setsunawb/ackit-hs#readme>
+
+dependencies:
+- base >= 4.7 && < 5
+
+library:
+  source-dirs: src
+  ghc-options:
+  - -Wall
+  - -Werror
+
+executables:
+  ackit-hs:
+    main:                Main.hs
+    source-dirs:         template
+    ghc-options:
+    - -Wall
+    - -Werror
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - ackit-hs
+
+tests:
+  ackit-hs-test:
+    main:                Spec.hs
+    source-dirs:         test
+    ghc-options:
+    - -Wall
+    - -Werror
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - ackit-hs
+    - tasty
+    - tasty-hunit
