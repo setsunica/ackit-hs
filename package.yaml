@@ -22,6 +22,8 @@ library:
   ghc-options:
   - -Wall
   - -Werror
+  dependencies:
+  - transformers
 
 executables:
   ackit-hs:
@@ -34,6 +36,7 @@ executables:
     - -with-rtsopts=-N
     dependencies:
     - ackit-hs
+    - transformers
 
 tests:
   ackit-hs-test:

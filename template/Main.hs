@@ -12,6 +12,8 @@
 module Main (main) where
 
 import Control.Applicative (Alternative)
+import Control.Monad.Trans.Except (Except, except, runExcept, throwE)
+import Data.List (elemIndex)
 import GHC.Arr as A (Array, Ix, array)
 import GHC.Base (Alternative (..))
 import GHC.Generics (Generic (..), K1 (..), M1 (..), U1, V1, type (:*:) (..), type (:+:) (..))
@@ -45,14 +47,11 @@ note l m = case m of
   Nothing -> Left l
   Just v -> Right v
 
-parseErrorNote :: Message -> Maybe a -> P a
-parseErrorNote s m = P $ note (ParseError s) m
-
 splitFirstElemSep :: Char -> String -> Maybe (String, String)
-splitFirstElemSep c s =
-  case break (== c) s of
-    (b, _ : a) -> pure (b, a)
-    _ -> Nothing
+splitFirstElemSep c s = do
+  idx <- elemIndex c s
+  let (b, _ : a) = splitAt idx s
+  pure (b, a)
 
 splitFirstLine :: String -> Maybe (String, String)
 splitFirstLine = splitFirstElemSep '\n'
@@ -78,25 +77,22 @@ readElem s = pparse <|> pword <|> pline
 type Message = String
 
 newtype ParseError = ParseError Message
-  deriving (Eq, Ord)
+  deriving (Eq, Ord, Semigroup, Monoid)
 
 instance Show ParseError where
   show (ParseError msg) = show msg
 
-defaultParseError :: ParseError
-defaultParseError = ParseError "an unexpected error occurred"
+newtype P a = P (Except ParseError a)
+  deriving (Eq, Ord, Show, Functor, Applicative, Alternative, Monad)
 
-newtype P a = P (Either ParseError a)
-  deriving (Eq, Ord, Show, Functor, Applicative, Monad)
+runP :: P a -> Either ParseError a
+runP (P e) = runExcept e
 
-instance Alternative P where
-  empty = P $ Left defaultParseError
-  (<|>) l r
-    | P (Right _) <- l = l
-    | otherwise = r
+noteErrP :: Message -> Maybe a -> P a
+noteErrP s = P . except . note (ParseError s)
 
-parseErrorP :: Message -> P a
-parseErrorP s = P $ Left $ ParseError s
+throwErrP :: Message -> P a
+throwErrP = P . throwE . ParseError
 
 class Parse a where
   parse :: String -> P (a, String)
@@ -106,37 +102,37 @@ class Parse a where
     pure (G.to rep, s')
 
 instance Parse Text where
-  parse s = parseErrorNote msg $ fline <|> fword
+  parse s = noteErrP msg $ fline <|> fword
     where
-      msg = printf "failed to parse Text [%s]" s
       fline = do
         (s1, s2) <- splitFirstLine s
         pure (Text s1, s2)
       fword = do
         (s1, s2) <- splitFirstWord s
         pure (Text s1, s2)
+      msg = printf "failed to parse Text [%s]" s
 
 instance Parse Int where
-  parse s = parseErrorNote msg $ readElem s
+  parse s = noteErrP msg $ readElem s
     where
       msg = printf "failed to parse Int [%s]" s
 
 instance Parse Double where
-  parse s = parseErrorNote msg $ readElem s
+  parse s = noteErrP msg $ readElem s
     where
       msg = printf "failed to parse Double [%s]" s
 
 instance Parse Char where
-  parse [] = parseErrorP "failed to parse char because string is empty"
+  parse [] = throwErrP "failed to parse char because string is empty"
   parse (c : s) = pure (c, s)
 
 instance Parse a => Parse [a] where
   parse s = do
-    (s1, s2) <- parseErrorNote msg $ splitFirstLine s
+    (s1, s2) <- noteErrP msg $ splitFirstLine s
     (acmx, _) <- f ([], s1)
     pure (acmx, s2)
     where
-      msg = printf "failed to parse List [%s]" s
+      msg = printf "failed to parse List [%v]" s
       f :: Parse a => ([a], String) -> P ([a], String)
       f (acmx, []) = pure (reverse acmx, [])
       f (acmx, s') = do
@@ -248,7 +244,7 @@ instance Compose' f => Compose' (M1 i t f) where
 ---- Ackit.Coll Module ----
 
 indexed :: [a] -> [(Int, a)]
-indexed = zip [1..]
+indexed = zip [1 ..]
 
 coordArray :: (Int, Int) -> [[a]] -> Array (Coord Int) a
 coordArray (n, m) nl = A.array range al
@@ -301,6 +297,6 @@ solve (Q k) = answer
 main :: IO ()
 main = interact overhaul
   where
-    overhaul s = case parse s of
-      P (Right (q, _)) -> compose . solve $ q
-      P (Left err) -> show err
+    overhaul s = case runP . parse $ s of
+      (Right (q, _)) -> compose . solve $ q
+      (Left err) -> show err

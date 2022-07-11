@@ -8,20 +8,18 @@
 
 module Ackit.Parse (P (..), Parse (..), ParseError, loadQ, splitFirstLine, splitFirstWord) where
 
-import Control.Applicative (Alternative (empty), (<|>))
+import Ackit.Data (Text (..), VList (..))
+import Control.Applicative (Alternative, (<|>))
+import Control.Monad.Trans.Except (Except, except, runExcept, throwE)
 import Data.List (elemIndex)
 import GHC.Generics as G (Generic (..), K1 (..), M1 (..), U1, V1, (:*:) (..), (:+:) (..))
 import Text.Printf (printf)
 import Text.Read (readMaybe)
-import Ackit.Data (Text(..), VList (..))
 
 note :: l -> Maybe r -> Either l r
 note l m = case m of
   Nothing -> Left l
   Just v -> Right v
-
-parseErrorNote :: Message -> Maybe a -> P a
-parseErrorNote s m = P $ note (ParseError s) m
 
 splitFirstElemSep :: Char -> String -> Maybe (String, String)
 splitFirstElemSep c s = do
@@ -53,25 +51,22 @@ readElem s = pparse <|> pword <|> pline
 type Message = String
 
 newtype ParseError = ParseError Message
-  deriving (Eq, Ord)
+  deriving (Eq, Ord, Semigroup, Monoid)
 
 instance Show ParseError where
   show (ParseError msg) = show msg
 
-defaultParseError :: ParseError
-defaultParseError = ParseError "an unexpected error occurred"
+newtype P a = P (Except ParseError a)
+  deriving (Eq, Ord, Show, Functor, Applicative, Alternative, Monad)
 
-newtype P a = P (Either ParseError a)
-  deriving (Eq, Ord, Show, Functor, Applicative, Monad)
+runP :: P a -> Either ParseError a
+runP (P e) = runExcept e
 
-instance Alternative P where
-  empty = P $ Left defaultParseError
-  (<|>) l r
-    | P (Right _) <- l = l
-    | otherwise = r
+noteErrP :: Message -> Maybe a -> P a
+noteErrP s = P . except . note (ParseError s)
 
-parseErrorP :: Message -> P a
-parseErrorP s = P $ Left $ ParseError s
+throwErrP :: Message -> P a
+throwErrP = P . throwE . ParseError
 
 class Parse a where
   parse :: String -> P (a, String)
@@ -81,7 +76,7 @@ class Parse a where
     pure (G.to rep, s')
 
 instance Parse Text where
-  parse s = P $ note e $ fline <|> fword
+  parse s = noteErrP msg $ fline <|> fword
     where
       fline = do
         (s1, s2) <- splitFirstLine s
@@ -89,25 +84,25 @@ instance Parse Text where
       fword = do
         (s1, s2) <- splitFirstWord s
         pure (Text s1, s2)
-      e = ParseError $ printf "failed to parse Text [%s]" s
+      msg = printf "failed to parse Text [%s]" s
 
 instance Parse Int where
-  parse s = parseErrorNote msg $ readElem s
+  parse s = noteErrP msg $ readElem s
     where
       msg = printf "failed to parse Int [%s]" s
 
 instance Parse Double where
-  parse s = parseErrorNote msg $ readElem s
+  parse s = noteErrP msg $ readElem s
     where
       msg = printf "failed to parse Double [%s]" s
 
 instance Parse Char where
-  parse [] = parseErrorP "failed to parse char because string is empty"
+  parse [] = throwErrP "failed to parse char because string is empty"
   parse (c : s) = pure (c, s)
 
 instance Parse a => Parse [a] where
   parse s = do
-    (s1, s2) <- parseErrorNote msg $ splitFirstLine s
+    (s1, s2) <- noteErrP msg $ splitFirstLine s
     (acmx, _) <- f ([], s1)
     pure (acmx, s2)
     where
@@ -176,6 +171,8 @@ data Q = A Text Int Int
 instance Parse Q
 
 loadQ :: String -> String
-loadQ s = case parse s :: P (Q, String) of
-  P (Left err) -> show err
-  P (Right (q, _)) -> show q
+loadQ s = case p of
+  (Left err) -> show err
+  (Right (q, _)) -> show q
+  where
+    p = runP $ parse s :: Either ParseError (Q, String)

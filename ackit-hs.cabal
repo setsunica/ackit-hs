@@ -38,6 +38,7 @@ library
   ghc-options: -Wall -Werror
   build-depends:
       base >=4.7 && <5
+    , transformers
   default-language: Haskell2010
 
 executable ackit-hs
@@ -50,6 +51,7 @@ executable ackit-hs
   build-depends:
       ackit-hs
     , base >=4.7 && <5
+    , transformers
   default-language: Haskell2010
 
 test-suite ackit-hs-test
