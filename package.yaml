@@ -1,5 +1,5 @@
 name:                ackit-hs
-version:             0.1.1.0
+version:             0.2.0.0
 github:              setsunawb/ackit-hs
 license:             Apache-2.0
 author:              setsunawb
@@ -23,6 +23,8 @@ library:
   - -Wall
   - -Werror
   dependencies:
+  - bytestring
+  - text
   - transformers
 
 executables:
@@ -36,6 +38,8 @@ executables:
     - -with-rtsopts=-N
     dependencies:
     - ackit-hs
+    - bytestring
+    - text
     - transformers
 
 tests:

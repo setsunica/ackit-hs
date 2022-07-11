@@ -1,52 +1,51 @@
 {-# LANGUAGE DefaultSignatures #-}
 {-# LANGUAGE DeriveFunctor #-}
-{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE OverloadedLists #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeOperators #-}
 
-module Ackit.Parse (P (..), Parse (..), ParseError, loadQ, splitFirstLine, splitFirstWord) where
+module Ackit.Parse (P (..), Parse (..), ParseError, splitFirstLine, splitFirstWord, runP) where
 
 import Ackit.Data (Text (..), VList (..))
 import Control.Applicative (Alternative, (<|>))
-import Control.Monad.Trans.Except (Except, except, runExcept, throwE)
-import Data.List (elemIndex)
+import Control.Monad.Trans.Except (Except, except, runExcept)
+import Data.ByteString (ByteString)
+import qualified Data.ByteString.Char8 as BS (break, uncons, unpack, dropSpace)
 import GHC.Generics as G (Generic (..), K1 (..), M1 (..), U1, V1, (:*:) (..), (:+:) (..))
-import Text.Printf (printf)
-import Text.Read (readMaybe)
+import qualified Text.Printf as T (printf)
+import qualified Text.Read as T (readMaybe)
 
 note :: l -> Maybe r -> Either l r
 note l m = case m of
   Nothing -> Left l
   Just v -> Right v
 
-splitFirstElemSep :: Char -> String -> Maybe (String, String)
-splitFirstElemSep c s = do
-  idx <- elemIndex c s
-  let (b, _ : a) = splitAt idx s
-  pure (b, a)
+splitFirstElemSpace :: Char -> ByteString -> (ByteString, ByteString)
+splitFirstElemSpace c s = BS.dropSpace <$> BS.break (== c) s
 
-splitFirstLine :: String -> Maybe (String, String)
-splitFirstLine = splitFirstElemSep '\n'
+splitFirstLine :: ByteString -> (ByteString, ByteString)
+splitFirstLine = splitFirstElemSpace '\n'
 
-splitFirstWord :: String -> Maybe (String, String)
-splitFirstWord = splitFirstElemSep ' '
+splitFirstWord :: ByteString -> (ByteString, ByteString)
+splitFirstWord = splitFirstElemSpace ' '
 
-readElem :: (Read a) => String -> Maybe (a, String)
-readElem s = pparse <|> pword <|> pline
+readElem ::Read a => ByteString -> Maybe (a, ByteString)
+readElem s = pword <|> pline <|> pparse
   where
-    pparse = do
-      a <- readMaybe s
-      pure (a, "")
     pword = do
-      (sw1, sw2) <- splitFirstWord s
-      a <- readMaybe sw1
+      let (sw1, sw2) = splitFirstWord s
+      a <- T.readMaybe $ BS.unpack sw1
       pure (a, sw2)
     pline = do
-      (sl1, sl2) <- splitFirstLine s
-      a <- readMaybe sl1
+      let (sl1, sl2) = splitFirstLine s
+      a <- T.readMaybe $ BS.unpack sl1
       pure (a, sl2)
+    pparse = do
+      a <- T.readMaybe $ BS.unpack s
+      pure (a, "")
 
 type Message = String
 
@@ -65,49 +64,40 @@ runP (P e) = runExcept e
 noteErrP :: Message -> Maybe a -> P a
 noteErrP s = P . except . note (ParseError s)
 
-throwErrP :: Message -> P a
-throwErrP = P . throwE . ParseError
-
 class Parse a where
-  parse :: String -> P (a, String)
-  default parse :: (Generic a, Parse' (Rep a)) => String -> P (a, String)
+  parse :: ByteString -> P (a, ByteString)
+  default parse :: (Generic a, Parse' (Rep a)) => ByteString -> P (a, ByteString)
   parse s = do
     (rep, s') <- parse' s
     pure (G.to rep, s')
 
 instance Parse Text where
-  parse s = noteErrP msg $ fline <|> fword
+  parse s = pure (Text $ BS.unpack s1, s2)
     where
-      fline = do
-        (s1, s2) <- splitFirstLine s
-        pure (Text s1, s2)
-      fword = do
-        (s1, s2) <- splitFirstWord s
-        pure (Text s1, s2)
-      msg = printf "failed to parse Text [%s]" s
+      (s1, s2) = splitFirstLine s
 
 instance Parse Int where
   parse s = noteErrP msg $ readElem s
     where
-      msg = printf "failed to parse Int [%s]" s
+      msg = T.printf "failed to parse Int [%s]" $ BS.unpack s
 
 instance Parse Double where
   parse s = noteErrP msg $ readElem s
     where
-      msg = printf "failed to parse Double [%s]" s
+      msg = T.printf "failed to parse Double [%s]" $ BS.unpack s
 
 instance Parse Char where
-  parse [] = throwErrP "failed to parse char because string is empty"
-  parse (c : s) = pure (c, s)
+  parse = noteErrP msg . BS.uncons
+    where
+      msg = "failed to parse char because string is empty"
 
 instance Parse a => Parse [a] where
   parse s = do
-    (s1, s2) <- noteErrP msg $ splitFirstLine s
     (acmx, _) <- f ([], s1)
     pure (acmx, s2)
     where
-      msg = printf "failed to parse List [%v]" s
-      f :: Parse a => ([a], String) -> P ([a], String)
+      (s1, s2) = splitFirstLine s
+      f :: Parse a => ([a], ByteString) -> P ([a], ByteString)
       f (acmx, []) = pure (reverse acmx, [])
       f (acmx, s') = do
         (a, s'') <- parse s'
@@ -118,7 +108,7 @@ instance Parse a => Parse (VList a) where
     (acmx, s') <- f ([], s)
     pure (VList acmx, s')
     where
-      f :: Parse a => ([a], String) -> P ([a], String)
+      f :: Parse a => ([a], ByteString) -> P ([a], ByteString)
       f (acmx, []) = pure (reverse acmx, [])
       f (acmx, s') = do
         (a, s'') <- parse s'
@@ -131,7 +121,7 @@ instance (Parse a, Parse b) => Parse (a, b) where
     pure ((l, r), s'')
 
 class Parse' f where
-  parse' :: String -> P (f a, String)
+  parse' :: ByteString -> P (f a, ByteString)
 
 instance Parse' V1 where
   parse' = undefined
@@ -164,15 +154,3 @@ instance (Parse' f) => Parse' (M1 i t f) where
   parse' s = do
     (m1, s') <- parse' s
     pure (M1 m1, s')
-
-data Q = A Text Int Int
-  deriving (Eq, Ord, Show, Generic)
-
-instance Parse Q
-
-loadQ :: String -> String
-loadQ s = case p of
-  (Left err) -> show err
-  (Right (q, _)) -> show q
-  where
-    p = runP $ parse s :: Either ParseError (Q, String)

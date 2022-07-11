@@ -1,5 +1,6 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 import GHC.Generics (Generic)
 import Test.Tasty (TestTree, defaultMain, testGroup)
@@ -56,14 +57,14 @@ suite =
     "Test Suite"
     [ testGroup
         "parse check"
-        [ testCase "splitFirstLine1" $ splitFirstLine "abc\n11\n22.0\n33\n" @?= Just ("abc", "11\n22.0\n33\n"),
-          testCase "splitFirstLine2" $ splitFirstLine "11\n22.0\n33\n" @?= Just ("11", "22.0\n33\n"),
-          testCase "splitFirstLine3" $ splitFirstLine "22.0\n33\n" @?= Just ("22.0", "33\n"),
-          testCase "splitFirstLine4" $ splitFirstLine "33\n" @?= Just ("33", ""),
-          testCase "splitFirstWord1" $ splitFirstWord "abc 11 22.0 33\n" @?= Just ("abc", "11 22.0 33\n"),
-          testCase "splitFirstWord2" $ splitFirstWord "11 22.0 33\n" @?= Just ("11", "22.0 33\n"),
-          testCase "splitFirstWord3" $ splitFirstWord "22.0 33\n" @?= Just ("22.0", "33\n"),
-          testCase "splitFirstWord4" $ splitFirstWord "33\n" @?= Nothing,
+        [ testCase "splitFirstLine1" $ splitFirstLine "abc\n11\n22.0\n33\n" @?= ("abc", "11\n22.0\n33\n"),
+          testCase "splitFirstLine2" $ splitFirstLine "11\n22.0\n33\n" @?= ("11", "22.0\n33\n"),
+          testCase "splitFirstLine3" $ splitFirstLine "22.0\n33\n" @?= ("22.0", "33\n"),
+          testCase "splitFirstLine4" $ splitFirstLine "33\n" @?= ("33", ""),
+          testCase "splitFirstWord1" $ splitFirstWord "abc 11 22.0 33\n" @?= ("abc", "11 22.0 33\n"),
+          testCase "splitFirstWord2" $ splitFirstWord "11 22.0 33\n" @?= ("11", "22.0 33\n"),
+          testCase "splitFirstWord3" $ splitFirstWord "22.0 33\n" @?= ("22.0", "33\n"),
+          testCase "splitFirstWord4" $ splitFirstWord "33\n" @?= ("33\n", ""),
           testCase "sampleQA1Text" $ parse "abc\n" @?= pure (QA1Text (Text "abc"), ""),
           testCase "sampleQA1Int" $ parse "11\n" @?= pure (QA1Int 11, ""),
           testCase "sampleQA1Double" $ parse "11.0\n" @?= pure (QA1Double 11.0, ""),
