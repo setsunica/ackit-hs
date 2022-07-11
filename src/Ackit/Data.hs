@@ -1,6 +1,6 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
-module Util.Data (Text (..), VList (..), Coord (..)) where
+module Ackit.Data (Text (..), VList (..), Coord (..)) where
 
 import Data.Ix (Ix)
 

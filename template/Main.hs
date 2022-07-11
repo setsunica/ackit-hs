@@ -19,7 +19,7 @@ import qualified GHC.Generics as G
 import Text.Printf (printf)
 import Text.Read (readMaybe)
 
----- Util.Data Module ----
+---- Ackit.Data Module ----
 
 newtype Text = Text String
   deriving (Eq, Ord, Show)
@@ -38,7 +38,7 @@ instance Num a => Num (Coord a) where
   fromInteger _ = undefined
   negate (Coord (x, y)) = Coord (-x, -y)
 
----- Util.Parse Module ----
+---- Ackit.Parse Module ----
 
 note :: l -> Maybe r -> Either l r
 note l m = case m of
@@ -195,7 +195,7 @@ instance (Parse' f) => Parse' (M1 i t f) where
     (m1, s') <- parse' s
     pure (M1 m1, s')
 
----- Util.Compose Module ----
+---- Ackit.Compose Module ----
 
 class Compose a where
   compose :: a -> String
@@ -245,7 +245,7 @@ instance Compose c => Compose' (K1 i c) where
 instance Compose' f => Compose' (M1 i t f) where
   compose' (M1 x) = compose' x
 
----- Util.Coll Module ----
+---- Ackit.Coll Module ----
 
 nat :: [Int]
 nat = iterate (+ 1) 0

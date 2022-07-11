@@ -2,10 +2,10 @@
 {-# LANGUAGE DefaultSignatures #-}
 {-# LANGUAGE FlexibleContexts #-}
 
-module Util.Compose (Compose (..)) where
+module Ackit.Compose (Compose (..)) where
 
 import GHC.Generics (U1, V1, type (:+:) (..), type (:*:) (..), K1 (..), M1 (..), Generic (..))
-import Util.Data (Text (..), VList (..))
+import Ackit.Data (Text (..), VList (..))
 import qualified GHC.Generics as G
 
 class Compose a where

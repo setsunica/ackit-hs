@@ -4,9 +4,9 @@
 import GHC.Generics (Generic)
 import Test.Tasty (TestTree, defaultMain, testGroup)
 import Test.Tasty.HUnit (testCase, (@?=), (@=?))
-import Util.Compose (Compose (..))
-import Util.Parse (Parse (..), splitFirstLine, splitFirstWord)
-import Util.Data (Text (..), VList (..))
+import Ackit.Compose (Compose (..))
+import Ackit.Parse (Parse (..), splitFirstLine, splitFirstWord)
+import Ackit.Data (Text (..), VList (..))
 
 newtype QA1Text = QA1Text Text
   deriving (Eq, Ord, Show, Generic, Parse, Compose)

@@ -1,7 +1,7 @@
-module Util.Coll where
+module Ackit.Coll where
 import qualified GHC.Arr as A
 import GHC.Arr (Array)
-import Util.Data (Coord (..))
+import Ackit.Data (Coord (..))
 
 nat :: [Int]
 nat = iterate (+ 1) 0

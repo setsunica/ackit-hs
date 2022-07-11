@@ -27,10 +27,10 @@ source-repository head
 
 library
   exposed-modules:
-      Util.Coll
-      Util.Compose
-      Util.Data
-      Util.Parse
+      Ackit.Coll
+      Ackit.Compose
+      Ackit.Data
+      Ackit.Parse
   other-modules:
       Paths_ackit_hs
   hs-source-dirs:

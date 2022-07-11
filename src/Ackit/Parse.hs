@@ -6,14 +6,14 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TypeOperators #-}
 
-module Util.Parse (P (..), Parse (..), ParseError, loadQ, splitFirstLine, splitFirstWord) where
+module Ackit.Parse (P (..), Parse (..), ParseError, loadQ, splitFirstLine, splitFirstWord) where
 
 import Control.Applicative (Alternative (empty), (<|>))
 import Data.List (elemIndex)
 import GHC.Generics as G (Generic (..), K1 (..), M1 (..), U1, V1, (:*:) (..), (:+:) (..))
 import Text.Printf (printf)
 import Text.Read (readMaybe)
-import Util.Data (Text(..), VList (..))
+import Ackit.Data (Text(..), VList (..))
 
 note :: l -> Maybe r -> Either l r
 note l m = case m of
