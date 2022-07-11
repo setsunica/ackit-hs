@@ -3,16 +3,13 @@ import qualified GHC.Arr as A
 import GHC.Arr (Array)
 import Ackit.Data (Coord (..))
 
-nat :: [Int]
-nat = iterate (+ 1) 0
-
 indexed :: [a] -> [(Int, a)]
-indexed = zip nat
+indexed = zip [1..]
 
 coordArray :: (Int, Int) -> [[a]] -> Array (Coord Int) a
 coordArray (n, m) nl = A.array range al
   where
-    range = (Coord (0, 0), Coord (n, m))
+    range = (Coord (1, 1), Coord (n, m))
     inl = indexed nl
     al = do
       (i, r) <- inl
