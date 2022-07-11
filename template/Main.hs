@@ -1,5 +1,5 @@
 -- The following URL template is used
--- https://github.com/setsunawb/ackit-hs/blob/main/template/Main.hs (v0.1.1.0)
+-- https://github.com/setsunawb/ackit-hs/blob/main/template/Main.hs (v0.2.0.0)
 {-# LANGUAGE DefaultSignatures #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleContexts #-}
@@ -19,7 +19,7 @@ import Data.ByteString.Char8 (ByteString)
 import qualified Data.ByteString.Char8 as BS
 import GHC.Arr (Array, Ix)
 import qualified GHC.Arr as A (array)
-import GHC.Base (Alternative (..))
+import GHC.Base (Alternative (..), divModInt)
 import GHC.Generics (Generic (..), K1 (..), M1 (..), U1, V1, type (:*:) (..), type (:+:) (..))
 import qualified GHC.Generics as G
 import qualified Text.Printf as T
@@ -281,8 +281,7 @@ instance Compose A
 solve :: Q -> A
 solve (Q k) = answer
   where
-    d = div k 60
-    m = mod k 60
+    (d, m) = divModInt k 60
     h = 21 + d
     answer = A . Text $ T.printf "%d:%02d" h m
 
