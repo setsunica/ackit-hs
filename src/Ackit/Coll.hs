@@ -1,10 +1,11 @@
 module Ackit.Coll where
-import qualified GHC.Arr as A
-import GHC.Arr (Array)
+
 import Ackit.Data (Coord (..))
+import GHC.Arr (Array)
+import qualified GHC.Arr as A
 
 indexed :: [a] -> [(Int, a)]
-indexed = zip [1..]
+indexed = zip [1 ..]
 
 coordArray :: (Int, Int) -> [[a]] -> Array (Coord Int) a
 coordArray (n, m) nl = A.array range al

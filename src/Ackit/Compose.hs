@@ -7,7 +7,7 @@ module Ackit.Compose (Compose (..)) where
 
 import Ackit.Data (Text (..), VList (..))
 import Data.ByteString.Char8 (ByteString)
-import qualified Data.ByteString.Char8 as BS (unlines, unwords, pack, singleton)
+import qualified Data.ByteString.Char8 as BS (pack, singleton, unlines, unwords)
 import GHC.Generics (Generic (..), K1 (..), M1 (..), U1, V1, type (:*:) (..), type (:+:) (..))
 import qualified GHC.Generics as G
 

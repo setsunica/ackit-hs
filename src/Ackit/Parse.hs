@@ -11,20 +11,18 @@ module Ackit.Parse (P (..), Parse (..), ParseError, splitFirstLine, splitFirstWo
 
 import Ackit.Data (Text (..), VList (..))
 import Control.Applicative (Alternative, (<|>))
-import Control.Monad.Trans.Except (Except, except, runExcept)
+import Control.Monad.Except (Except, liftEither, runExcept)
 import Data.ByteString (ByteString)
-import qualified Data.ByteString.Char8 as BS (break, uncons, unpack, dropSpace)
+import qualified Data.ByteString.Char8 as BS (break, dropWhile, empty, uncons, unpack)
+import Data.Char (isSpace)
 import GHC.Generics as G (Generic (..), K1 (..), M1 (..), U1, V1, (:*:) (..), (:+:) (..))
 import qualified Text.Printf as T (printf)
 import qualified Text.Read as T (readMaybe)
 
-note :: l -> Maybe r -> Either l r
-note l m = case m of
-  Nothing -> Left l
-  Just v -> Right v
-
 splitFirstElemSpace :: Char -> ByteString -> (ByteString, ByteString)
-splitFirstElemSpace c s = BS.dropSpace <$> BS.break (== c) s
+splitFirstElemSpace c s = dropSpace <$> BS.break (== c) s
+  where
+    dropSpace = BS.dropWhile isSpace
 
 splitFirstLine :: ByteString -> (ByteString, ByteString)
 splitFirstLine = splitFirstElemSpace '\n'
@@ -32,7 +30,7 @@ splitFirstLine = splitFirstElemSpace '\n'
 splitFirstWord :: ByteString -> (ByteString, ByteString)
 splitFirstWord = splitFirstElemSpace ' '
 
-readElem ::Read a => ByteString -> Maybe (a, ByteString)
+readElem :: Read a => ByteString -> Maybe (a, ByteString)
 readElem s = pword <|> pline <|> pparse
   where
     pword = do
@@ -61,8 +59,13 @@ newtype P a = P (Except ParseError a)
 runP :: P a -> Either ParseError a
 runP (P e) = runExcept e
 
+note :: a -> Maybe b -> Either a b
+note a m = case m of
+  Nothing -> Left a
+  Just b -> Right b
+
 noteErrP :: Message -> Maybe a -> P a
-noteErrP s = P . except . note (ParseError s)
+noteErrP s = P . liftEither . note (ParseError s)
 
 class Parse a where
   parse :: ByteString -> P (a, ByteString)
@@ -98,7 +101,7 @@ instance Parse a => Parse [a] where
     where
       (s1, s2) = splitFirstLine s
       f :: Parse a => ([a], ByteString) -> P ([a], ByteString)
-      f (acmx, []) = pure (reverse acmx, [])
+      f (acmx, e) | e == BS.empty = pure (reverse acmx, e)
       f (acmx, s') = do
         (a, s'') <- parse s'
         f (a : acmx, s'')
@@ -109,7 +112,7 @@ instance Parse a => Parse (VList a) where
     pure (VList acmx, s')
     where
       f :: Parse a => ([a], ByteString) -> P ([a], ByteString)
-      f (acmx, []) = pure (reverse acmx, [])
+      f (acmx, e) | e == BS.empty = pure (reverse acmx, e)
       f (acmx, s') = do
         (a, s'') <- parse s'
         f (a : acmx, s'')

@@ -1,5 +1,5 @@
 -- The following URL template is used
--- https://github.com/setsunawb/ackit-hs/blob/main/template/Main.hs (v0.2.0.0)
+-- https://github.com/setsunawb/ackit-hs/blob/main/template/Main.hs (v0.2.1.0)
 {-# LANGUAGE DefaultSignatures #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleContexts #-}
@@ -14,9 +14,11 @@
 module Main (main) where
 
 import Control.Applicative (Alternative)
-import Control.Monad.Trans.Except (Except, except, runExcept)
+import Control.Monad.Error.Class (liftEither)
+import Control.Monad.Except (Except, runExcept)
 import Data.ByteString.Char8 (ByteString)
 import qualified Data.ByteString.Char8 as BS
+import Data.Char (isSpace)
 import GHC.Arr (Array, Ix)
 import qualified GHC.Arr as A (array)
 import GHC.Base (Alternative (..), divModInt)
@@ -42,17 +44,14 @@ instance Num a => Num (Coord a) where
   abs (Coord (x, y)) = Coord (abs x, abs y)
   signum (Coord (x, y)) = Coord (signum x, signum y)
   fromInteger _ = undefined
-  negate (Coord (x, y)) = Coord (-x, -y)
+  negate (Coord (x, y)) = Coord (- x, - y)
 
 ---- Ackit.Parse Module ----
 
-note :: l -> Maybe r -> Either l r
-note l m = case m of
-  Nothing -> Left l
-  Just v -> Right v
-
 splitFirstElemSpace :: Char -> ByteString -> (ByteString, ByteString)
-splitFirstElemSpace c s = BS.dropSpace <$> BS.break (== c) s
+splitFirstElemSpace c s = dropSpace <$> BS.break (== c) s
+  where
+    dropSpace = BS.dropWhile isSpace
 
 splitFirstLine :: ByteString -> (ByteString, ByteString)
 splitFirstLine = splitFirstElemSpace '\n'
@@ -89,8 +88,13 @@ newtype P a = P (Except ParseError a)
 runP :: P a -> Either ParseError a
 runP (P e) = runExcept e
 
+note :: a -> Maybe b -> Either a b
+note a m = case m of
+  Nothing -> Left a
+  Just b -> Right b
+
 noteErrP :: Message -> Maybe a -> P a
-noteErrP s = P . except . note (ParseError s)
+noteErrP s = P . liftEither . note (ParseError s)
 
 class Parse a where
   parse :: ByteString -> P (a, ByteString)
@@ -126,7 +130,7 @@ instance Parse a => Parse [a] where
     where
       (s1, s2) = splitFirstLine s
       f :: Parse a => ([a], ByteString) -> P ([a], ByteString)
-      f (acmx, []) = pure (reverse acmx, [])
+      f (acmx, e) | e == BS.empty = pure (reverse acmx, e)
       f (acmx, s') = do
         (a, s'') <- parse s'
         f (a : acmx, s'')
@@ -137,7 +141,7 @@ instance Parse a => Parse (VList a) where
     pure (VList acmx, s')
     where
       f :: Parse a => ([a], ByteString) -> P ([a], ByteString)
-      f (acmx, []) = pure (reverse acmx, [])
+      f (acmx, e) | e == BS.empty = pure (reverse acmx, e)
       f (acmx, s') = do
         (a, s'') <- parse s'
         f (a : acmx, s'')
